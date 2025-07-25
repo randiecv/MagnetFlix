@@ -124,6 +124,11 @@
       const res = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=60e9fcee1aaa6bdcb3a9bbc60ac87c59&language=es-ES&external_source=imdb_id`);
       const data = await res.json();
       const movie = data.movie_results[0] || data.tv_results[0];
+
+      if (!movie) {
+      console.warn(`No se encontró contenido para el ID: ${imdbID}`, data);
+    }
+
       return movie;
     }
 
