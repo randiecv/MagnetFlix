@@ -2,164 +2,176 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MagnetFlix</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
-      background-color: #1e1e2f;
-      font-family: 'Roboto', sans-serif;
-      color: white;
+      background-color: #141414;
+      font-family: Arial, sans-serif;
+      color: #fff;
     }
+
     header {
       padding: 1rem;
-      background-color: #12121f;
+      background-color: #000;
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
     }
+
     header h1 {
       margin: 0;
       font-size: 1.5rem;
-      color: #00bcd4;
     }
-    .filters {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    input, select {
+
+    input[type="text"], select {
       padding: 0.5rem;
-      border-radius: 5px;
+      border-radius: 4px;
       border: none;
+      margin-left: 1rem;
     }
+
     #catalog {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 1rem;
       padding: 1rem;
     }
+
     .card {
-      background-color: #2e2e42;
-      border-radius: 10px;
+      background-color: #1f1f1f;
+      border-radius: 8px;
       overflow: hidden;
+      cursor: pointer;
       transition: transform 0.2s;
     }
+
     .card:hover {
       transform: scale(1.05);
     }
+
     .card img {
       width: 100%;
-      height: auto;
+      height: 225px;
+      object-fit: cover;
     }
+
     .card-content {
       padding: 0.5rem;
     }
-    .card h3 {
+
+    .card-content h3 {
       margin: 0;
       font-size: 1rem;
-      color: #fff;
     }
-    .card p {
-      margin: 0.5rem 0 0;
-      font-size: 0.85rem;
+
+    .card-content p {
+      font-size: 0.8rem;
       color: #ccc;
-    }
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>MagnetFlix</h1>
-    <div class="filters">
-      <input type="text" id="searchInput" placeholder="Buscar por título...">
+    <h1>🎬 MagnetFlix</h1>
+    <div>
+      <input type="text" id="searchInput" placeholder="Buscar título..." />
       <select id="yearFilter">
         <option value="">Todos los años</option>
       </select>
     </div>
   </header>
+
   <main id="catalog"></main>
 
   <script>
-    const TMDB_API_KEY = "60e9fcee1aaa6bdcb3a9bbc60ac87c59"; // Reemplaza con tu API Key de TMDb
-    const catalog = document.getElementById("catalog");
+    const API_KEY = "60e9fcee1aaa6bdcb3a9bbc60ac87c59"; // Reemplaza con tu API KEY de TMDb
     const searchInput = document.getElementById("searchInput");
     const yearFilter = document.getElementById("yearFilter");
+    const container = document.getElementById("catalog");
 
     const items = [
-      {
-        title: "Guardianes de la Galaxia Vol. 2",
-        year: 2017,
-        imdbID: "tt3896198",
-        magnet: "magnet:?xt=urn:btih:abc123..."
-      },
-      {
-        title: "Breaking Bad",
-        year: 2008,
-        imdbID: "tt0903747",
-        magnet: "magnet:?xt=urn:btih:def456..."
-      }
-      // Puedes agregar más películas o series aquí
+      { imdb: "tt1285016", magnet: "magnet:?xt=urn:btih:..." }, // Megamente
+      { imdb: "tt3896198", magnet: "magnet:?xt=urn:btih:..." }, // Guardianes
+      { imdb: "tt0944947", magnet: "magnet:?xt=urn:btih:..." }, // GOT
+      { imdb: "tt0903747", magnet: "magnet:?xt=urn:btih:..." }, // BB
     ];
 
-    function populateYearFilter() {
-      const years = [...new Set(items.map(item => item.year))].sort((a, b) => b - a);
-      for (let year of years) {
-        const option = document.createElement("option");
-        option.value = year;
-        option.textContent = year;
-        yearFilter.appendChild(option);
-      }
-    }
-
     async function fetchDetails(imdbID) {
-      const res = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=60e9fcee1aaa6bdcb3a9bbc60ac87c59&language=es-ES&external_source=imdb_id`);
+      const res = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=${API_KEY}&language=es-ES&external_source=imdb_id`);
       const data = await res.json();
       const movie = data.movie_results[0] || data.tv_results[0];
-
-      if (!movie) {
-      console.warn(`No se encontró contenido para el ID: ${imdbID}`, data);
-    }
-
       return movie;
     }
 
-    async function renderCatalog() {
-      catalog.innerHTML = "Cargando...";
-      const search = searchInput.value.toLowerCase();
-      const selectedYear = yearFilter.value;
-      const filtered = items.filter(item => {
-        const matchTitle = item.title.toLowerCase().includes(search);
-        const matchYear = selectedYear ? item.year == selectedYear : true;
-        return matchTitle && matchYear;
+    async function renderCard(item) {
+      const movie = await fetchDetails(item.imdb);
+      if (!movie) return;
+
+      const title = movie.title || movie.name;
+      const description = movie.overview || "Sin descripción";
+      const year = (movie.release_date || movie.first_air_date || "").split("-")[0];
+      const image = movie.poster_path
+        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+        : "https://via.placeholder.com/300x450?text=Sin+imagen";
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${image}" alt="${title}">
+        <div class="card-content">
+          <h3>${title}</h3>
+          <p>${description.slice(0, 100)}...</p>
+          <p><small>${year}</small></p>
+        </div>
+      `;
+
+      card.addEventListener("click", () => {
+        window.open(item.magnet, "_blank");
       });
 
-      const details = await Promise.all(filtered.map(item => fetchDetails(item.imdbID)));
-      catalog.innerHTML = details.map((movie, i) => `
-        <div class="card">
-          <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title || movie.name}">
-          <div class="card-content">
-            <h3>${movie.title || movie.name}</h3>
-            <p>${(movie.release_date || movie.first_air_date || '').slice(0, 4)}</p>
-            <a href="${filtered[i].magnet}" target="_blank">Ver por magnet</a>
-          </div>
-        </div>
-      `).join("");
+      card.dataset.title = title.toLowerCase();
+      card.dataset.year = year;
+
+      container.appendChild(card);
     }
 
-    searchInput.addEventListener("input", renderCatalog);
-    yearFilter.addEventListener("change", renderCatalog);
+    async function loadCatalog() {
+      container.innerHTML = "";
+      for (const item of items) {
+        await renderCard(item);
+      }
+      populateYearFilter();
+    }
 
-    populateYearFilter();
-    renderCatalog();
+    function populateYearFilter() {
+      const years = Array.from(document.querySelectorAll(".card")).map(card => card.dataset.year);
+      const uniqueYears = [...new Set(years)].filter(Boolean).sort((a, b) => b - a);
+      yearFilter.innerHTML = `<option value="">Todos los años</option>`;
+      uniqueYears.forEach(y => {
+        const option = document.createElement("option");
+        option.value = y;
+        option.textContent = y;
+        yearFilter.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const query = searchInput.value.toLowerCase();
+      const year = yearFilter.value;
+
+      document.querySelectorAll(".card").forEach(card => {
+        const matchesTitle = card.dataset.title.includes(query);
+        const matchesYear = year ? card.dataset.year === year : true;
+        card.style.display = matchesTitle && matchesYear ? "block" : "none";
+      });
+    }
+
+    searchInput.addEventListener("input", applyFilters);
+    yearFilter.addEventListener("change", applyFilters);
+
+    loadCatalog();
   </script>
 </body>
 </html>
