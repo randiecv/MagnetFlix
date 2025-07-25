@@ -85,7 +85,7 @@
     }
 
     async function loadCatalog() {
-      const res = await fetch("peliculas.json");
+      const res = await fetch("./peliculas.json");
       const data = await res.json();
       const enriched = [];
 
