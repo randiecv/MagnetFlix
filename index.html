@@ -2,158 +2,157 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Catálogo Magnet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MagnetFlix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #fff;
-      padding: 2rem;
+      margin: 0;
+      background-color: #1e1e2f;
+      font-family: 'Roboto', sans-serif;
+      color: white;
     }
-    h1 {
-      text-align: center;
+    header {
+      padding: 1rem;
+      background-color: #12121f;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
     }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 1rem;
-      margin-bottom: 2rem;
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #00bcd4;
+    }
+    .filters {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    input, select {
+      padding: 0.5rem;
       border-radius: 5px;
       border: none;
     }
-    .item {
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .item img {
-      width: 120px;
-      border-radius: 8px;
-    }
-    .content {
-      display: flex;
+    #catalog {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 1rem;
+      padding: 1rem;
     }
-    .details {
-      flex: 1;
+    .card {
+      background-color: #2e2e42;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.2s;
     }
-    .details h2 {
-      margin-top: 0;
+    .card:hover {
+      transform: scale(1.05);
     }
-    a.button {
-      background: #00b894;
-      color: white;
-      padding: 0.4rem 0.8rem;
-      border-radius: 5px;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
+    .card img {
+      width: 100%;
+      height: auto;
     }
-    a.button:hover {
-      background: #019875;
+    .card-content {
+      padding: 0.5rem;
     }
-    .season {
-      margin-top: 1rem;
+    .card h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #fff;
     }
-    .episode {
-      margin-left: 1rem;
-      padding: 0.3rem 0;
+    .card p {
+      margin: 0.5rem 0 0;
+      font-size: 0.85rem;
+      color: #ccc;
     }
-    .episode span {
-      display: inline-block;
-      min-width: 140px;
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>🎬 Catálogo Magnet</h1>
-  <input type="text" id="searchInput" placeholder="🔍 Buscar por título...">
-  <div id="catalog"></div>
+  <header>
+    <h1>MagnetFlix</h1>
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Buscar por título...">
+      <select id="yearFilter">
+        <option value="">Todos los años</option>
+      </select>
+    </div>
+  </header>
+  <main id="catalog"></main>
 
   <script>
-    const OMDB_API_KEY = "a9eb7c7a"; // Reemplázalo con tu API KEY de OMDb
+    const TMDB_API_KEY = "60e9fcee1aaa6bdcb3a9bbc60ac87c59"; // Reemplaza con tu API Key de TMDb
+    const catalog = document.getElementById("catalog");
     const searchInput = document.getElementById("searchInput");
-    const container = document.getElementById("catalog");
-    let allItems = [];
+    const yearFilter = document.getElementById("yearFilter");
 
-    async function fetchOMDB(imdbID) {
-      const res = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${OMDB_API_KEY}`);
+    const items = [
+      {
+        title: "Guardianes de la Galaxia Vol. 2",
+        year: 2017,
+        imdbID: "tt3896198",
+        magnet: "magnet:?xt=urn:btih:abc123..."
+      },
+      {
+        title: "Breaking Bad",
+        year: 2008,
+        imdbID: "tt0903747",
+        magnet: "magnet:?xt=urn:btih:def456..."
+      }
+      // Puedes agregar más películas o series aquí
+    ];
+
+    function populateYearFilter() {
+      const years = [...new Set(items.map(item => item.year))].sort((a, b) => b - a);
+      for (let year of years) {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        yearFilter.appendChild(option);
+      }
+    }
+
+    async function fetchDetails(imdbID) {
+      const res = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=a9eb7c7a&lang=es`);
       return await res.json();
     }
 
-    async function loadCatalog() {
-      const res = await fetch("./peliculas.json");
-      const data = await res.json();
-      const enriched = [];
+    async function renderCatalog() {
+      catalog.innerHTML = "Cargando...";
+      const search = searchInput.value.toLowerCase();
+      const selectedYear = yearFilter.value;
+      const filtered = items.filter(item => {
+        const matchTitle = item.title.toLowerCase().includes(search);
+        const matchYear = selectedYear ? item.year == selectedYear : true;
+        return matchTitle && matchYear;
+      });
 
-      for (const item of data) {
-        const info = await fetchOMDB(item.imdbID);
-        enriched.push({ ...item, info });
-      }
-
-      allItems = enriched;
-      renderItems(allItems);
+      const details = await Promise.all(filtered.map(item => fetchDetails(item.imdbID)));
+      catalog.innerHTML = details.map((movie, i) => `
+        <div class="card">
+          <img src="${movie.Poster}" alt="${movie.Title}">
+          <div class="card-content">
+            <h3>${movie.Title}</h3>
+            <p>${movie.Year}</p>
+            <a href="${filtered[i].magnet}" target="_blank">Ver por magnet</a>
+          </div>
+        </div>
+      `).join("");
     }
 
-    function renderItems(items) {
-      container.innerHTML = "";
+    searchInput.addEventListener("input", renderCatalog);
+    yearFilter.addEventListener("change", renderCatalog);
 
-      if (items.length === 0) {
-        container.innerHTML = "<p>No se encontraron resultados.</p>";
-        return;
-      }
-
-      for (const item of items) {
-        const div = document.createElement("div");
-        div.className = "item";
-
-        let content = `
-          <div class="content">
-            <img src="${item.info.Poster}" alt="${item.info.Title}" />
-            <div class="details">
-              <h2>${item.info.Title} (${item.info.Year})</h2>
-              <p>${item.info.Plot}</p>
-              <p>⭐ ${item.info.imdbRating} / 10</p>
-        `;
-
-        if (item.type === "movie") {
-          content += `<a class="button" href="${item.magnet}" target="_blank">Ver con Stremio</a>`;
-        }
-
-        content += `</div></div>`;
-
-        if (item.type === "series") {
-          for (const season of item.seasons) {
-            content += `<div class="season"><strong>Temporada ${season.season}</strong>`;
-            for (const ep of season.episodes) {
-              content += `
-                <div class="episode">
-                  <span>Ep ${ep.episode}: ${ep.title}</span>
-                  <a class="button" href="${ep.magnet}" target="_blank">Ver</a>
-                </div>
-              `;
-            }
-            content += `</div>`;
-          }
-        }
-
-        div.innerHTML = content;
-        container.appendChild(div);
-      }
-    }
-
-    searchInput.addEventListener("input", () => {
-      const value = searchInput.value.toLowerCase();
-      const filtered = allItems.filter(item =>
-        item.info.Title.toLowerCase().includes(value)
-      );
-      renderItems(filtered);
-    });
-
-    loadCatalog();
+    populateYearFilter();
+    renderCatalog();
   </script>
 </body>
 </html>
