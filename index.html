@@ -80,7 +80,7 @@
     let allItems = [];
 
     async function fetchOMDB(imdbID) {
-      const res = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${a9eb7c7a}`);
+      const res = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${OMDB_API_KEY}`);
       return await res.json();
     }
 
