@@ -2,174 +2,146 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MagnetFlix</title>
   <style>
     body {
       margin: 0;
-      background-color: #141414;
-      font-family: Arial, sans-serif;
+      background: #141414;
       color: #fff;
+      font-family: Arial, sans-serif;
     }
-
     header {
       padding: 1rem;
-      background-color: #000;
+      background: #111;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    input[type="text"], select {
+    header input {
       padding: 0.5rem;
-      border-radius: 4px;
+      border-radius: 5px;
       border: none;
-      margin-left: 1rem;
+      width: 200px;
     }
-
-    #catalog {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem;
+    main {
       padding: 1rem;
     }
-
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
     .card {
-      background-color: #1f1f1f;
+      background: #222;
       border-radius: 8px;
       overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s;
+      display: flex;
+      flex-direction: column;
     }
-
-    .card:hover {
-      transform: scale(1.05);
-    }
-
     .card img {
       width: 100%;
-      height: 225px;
+      height: 240px;
       object-fit: cover;
     }
-
     .card-content {
       padding: 0.5rem;
+      flex: 1;
     }
-
-    .card-content h3 {
-      margin: 0;
+    .card h3 {
       font-size: 1rem;
+      margin: 0.5rem 0;
     }
-
-    .card-content p {
-      font-size: 0.8rem;
-      color: #ccc;
+    .card button {
+      background: #e50914;
+      border: none;
+      color: #fff;
+      padding: 0.5rem;
+      cursor: pointer;
+      border-radius: 5px;
+      width: 100%;
+    }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #888;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>🎬 MagnetFlix</h1>
-    <div>
-      <input type="text" id="searchInput" placeholder="Buscar título..." />
-      <select id="yearFilter">
-        <option value="">Todos los años</option>
-      </select>
-    </div>
+    <h1>MagnetFlix</h1>
+    <input type="text" id="searchInput" placeholder="Buscar..." />
   </header>
-
-  <main id="catalog"></main>
+  <main>
+    <div class="grid" id="catalog"></div>
+  </main>
+  <footer>
+    MagnetFlix &copy; 2025
+  </footer>
 
   <script>
-    const API_KEY = "60e9fcee1aaa6bdcb3a9bbc60ac87c59"; // Reemplaza con tu API KEY de TMDb
-    const searchInput = document.getElementById("searchInput");
-    const yearFilter = document.getElementById("yearFilter");
+    const API_KEY = "TU_API_KEY_TMDB"; // Reemplaza con tu API KEY de TMDB
     const container = document.getElementById("catalog");
-
-    const items = [
-      { imdb: "tt1001526", magnet: "magnet:?xt=urn:btih:47f5cc4fd53fef67c49cdaa5821e3038ef764e89&dn=Megamente.2010.1080p-Dual-Lat" }, // Megamente
-      { imdb: "tt3896198", magnet: "magnet:?xt=urn:btih:..." }, // Guardianes
-      { imdb: "tt0944947", magnet: "magnet:?xt=urn:btih:..." }, // GOT
-      { imdb: "tt0903747", magnet: "magnet:?xt=urn:btih:..." }, // BB
-    ];
+    const searchInput = document.getElementById("searchInput");
+    let allItems = [];
 
     async function fetchDetails(imdbID) {
       const res = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=${API_KEY}&language=es-ES&external_source=imdb_id`);
       const data = await res.json();
-      const movie = data.movie_results[0] || data.tv_results[0];
-      return movie;
-    }
-
-    async function renderCard(item) {
-      const movie = await fetchDetails(item.imdb);
-      if (!movie) return;
-
-      const title = movie.title || movie.name;
-      const description = movie.overview || "Sin descripción";
-      const year = (movie.release_date || movie.first_air_date || "").split("-")[0];
-      const image = movie.poster_path
-        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-        : "https://via.placeholder.com/300x450?text=Sin+imagen";
-
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <img src="${image}" alt="${title}">
-        <div class="card-content">
-          <h3>${title}</h3>
-          <p>${description.slice(0, 100)}...</p>
-          <p><small>${year}</small></p>
-        </div>
-      `;
-
-      card.addEventListener("click", () => {
-        window.open(item.magnet, "_blank");
-      });
-
-      card.dataset.title = title.toLowerCase();
-      card.dataset.year = year;
-
-      container.appendChild(card);
+      const item = data.movie_results[0] || data.tv_results[0];
+      return item;
     }
 
     async function loadCatalog() {
-      container.innerHTML = "";
-      for (const item of items) {
-        await renderCard(item);
-      }
-      populateYearFilter();
+      const res = await fetch("peliculas.json");
+      const data = await res.json();
+      allItems = data;
+      renderCatalog(allItems);
     }
 
-    function populateYearFilter() {
-      const years = Array.from(document.querySelectorAll(".card")).map(card => card.dataset.year);
-      const uniqueYears = [...new Set(years)].filter(Boolean).sort((a, b) => b - a);
-      yearFilter.innerHTML = `<option value="">Todos los años</option>`;
-      uniqueYears.forEach(y => {
-        const option = document.createElement("option");
-        option.value = y;
-        option.textContent = y;
-        yearFilter.appendChild(option);
-      });
+    async function renderCatalog(items) {
+      container.innerHTML = "Cargando...";
+      const rendered = await Promise.all(
+        items.map(async (item) => {
+          if (item.type === "movie") {
+            const details = await fetchDetails(item.imdbID);
+            if (!details) return "";
+            return `
+              <div class="card">
+                <img src="https://image.tmdb.org/t/p/w500${details.poster_path}" alt="${item.title}" />
+                <div class="card-content">
+                  <h3>${details.title || details.name}</h3>
+                  <p>${details.release_date?.split("-")[0] || ""}</p>
+                  <button onclick="window.open('${item.magnet}')">Ver</button>
+                </div>
+              </div>
+            `;
+          } else if (item.type === "series") {
+            const details = await fetchDetails(item.imdbID);
+            if (!details) return "";
+            return `
+              <div class="card">
+                <img src="https://image.tmdb.org/t/p/w500${details.poster_path}" alt="${item.title}" />
+                <div class="card-content">
+                  <h3>${details.name}</h3>
+                  <p>Serie (${details.first_air_date?.split("-")[0] || ""})</p>
+                  <button onclick="alert('Busca la temporada en tu cliente torrent')">Temporadas</button>
+                </div>
+              </div>
+            `;
+          }
+        })
+      );
+      container.innerHTML = rendered.join("");
     }
 
-    function applyFilters() {
+    searchInput.addEventListener("input", () => {
       const query = searchInput.value.toLowerCase();
-      const year = yearFilter.value;
-
-      document.querySelectorAll(".card").forEach(card => {
-        const matchesTitle = card.dataset.title.includes(query);
-        const matchesYear = year ? card.dataset.year === year : true;
-        card.style.display = matchesTitle && matchesYear ? "block" : "none";
-      });
-    }
-
-    searchInput.addEventListener("input", applyFilters);
-    yearFilter.addEventListener("change", applyFilters);
+      const filtered = allItems.filter((item) => item.title.toLowerCase().includes(query));
+      renderCatalog(filtered);
+    });
 
     loadCatalog();
   </script>
