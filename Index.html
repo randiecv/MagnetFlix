@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Catálogo Magnet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 5px;
+      border: none;
+    }
+    .item {
+      background: #1e1e1e;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .item img {
+      width: 120px;
+      border-radius: 8px;
+    }
+    .content {
+      display: flex;
+      gap: 1rem;
+    }
+    .details {
+      flex: 1;
+    }
+    .details h2 {
+      margin-top: 0;
+    }
+    a.button {
+      background: #00b894;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 5px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    a.button:hover {
+      background: #019875;
+    }
+    .season {
+      margin-top: 1rem;
+    }
+    .episode {
+      margin-left: 1rem;
+      padding: 0.3rem 0;
+    }
+    .episode span {
+      display: inline-block;
+      min-width: 140px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎬 Catálogo Magnet</h1>
+  <input type="text" id="searchInput" placeholder="🔍 Buscar por título...">
+  <div id="catalog"></div>
+
+  <script>
+    const OMDB_API_KEY = "TU_API_KEY"; // Reemplázalo con tu API KEY de OMDb
+    const searchInput = document.getElementById("searchInput");
+    const container = document.getElementById("catalog");
+    let allItems = [];
+
+    async function fetchOMDB(imdbID) {
+      const res = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${a9eb7c7a}`);
+      return await res.json();
+    }
+
+    async function loadCatalog() {
+      const res = await fetch("peliculas.json");
+      const data = await res.json();
+      const enriched = [];
+
+      for (const item of data) {
+        const info = await fetchOMDB(item.imdbID);
+        enriched.push({ ...item, info });
+      }
+
+      allItems = enriched;
+      renderItems(allItems);
+    }
+
+    function renderItems(items) {
+      container.innerHTML = "";
+
+      if (items.length === 0) {
+        container.innerHTML = "<p>No se encontraron resultados.</p>";
+        return;
+      }
+
+      for (const item of items) {
+        const div = document.createElement("div");
+        div.className = "item";
+
+        let content = `
+          <div class="content">
+            <img src="${item.info.Poster}" alt="${item.info.Title}" />
+            <div class="details">
+              <h2>${item.info.Title} (${item.info.Year})</h2>
+              <p>${item.info.Plot}</p>
+              <p>⭐ ${item.info.imdbRating} / 10</p>
+        `;
+
+        if (item.type === "movie") {
+          content += `<a class="button" href="${item.magnet}" target="_blank">Ver con Stremio</a>`;
+        }
+
+        content += `</div></div>`;
+
+        if (item.type === "series") {
+          for (const season of item.seasons) {
+            content += `<div class="season"><strong>Temporada ${season.season}</strong>`;
+            for (const ep of season.episodes) {
+              content += `
+                <div class="episode">
+                  <span>Ep ${ep.episode}: ${ep.title}</span>
+                  <a class="button" href="${ep.magnet}" target="_blank">Ver</a>
+                </div>
+              `;
+            }
+            content += `</div>`;
+          }
+        }
+
+        div.innerHTML = content;
+        container.appendChild(div);
+      }
+    }
+
+    searchInput.addEventListener("input", () => {
+      const value = searchInput.value.toLowerCase();
+      const filtered = allItems.filter(item =>
+        item.info.Title.toLowerCase().includes(value)
+      );
+      renderItems(filtered);
+    });
+
+    loadCatalog();
+  </script>
+</body>
+</html>

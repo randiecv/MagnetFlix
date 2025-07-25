@@ -1,0 +1,40 @@
+[
+  {
+    "type": "movie",
+    "title": "Megamente",
+    "imdbID": "tt1001526",
+    "magnet": "magnet:?xt=urn:btih:47f5cc4fd53fef67c49cdaa5821e3038ef764e89&dn=Megamente.2010.1080p-Dual-Lat"
+  },
+  {
+    "type": "series",
+    "title": "Breaking Bad",
+    "imdbID": "tt0903747",
+    "seasons": [
+      {
+        "season": 1,
+        "episodes": [
+          {
+            "episode": 1,
+            "title": "Pilot",
+            "magnet": "magnet:?xt=urn:btih:XXXXX"
+          },
+          {
+            "episode": 2,
+            "title": "Cat's in the Bag...",
+            "magnet": "magnet:?xt=urn:btih:YYYYY"
+          }
+        ]
+      },
+      {
+        "season": 2,
+        "episodes": [
+          {
+            "episode": 1,
+            "title": "Seven Thirty-Seven",
+            "magnet": "magnet:?xt=urn:btih:ZZZZZ"
+          }
+        ]
+      }
+    ]
+  }
+]
